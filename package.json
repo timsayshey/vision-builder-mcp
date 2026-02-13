@@ -1,6 +1,6 @@
 {
   "name": "@noleemits/vision-builder-mcp",
-  "version": "1.7.3",
+  "version": "1.7.5",
   "description": "MCP Server for Noleemits Vision Builder - Connect Claude Desktop to WordPress + Elementor. Manage pages, sections, content, and SEO via AI.",
   "main": "index.js",
   "type": "module",

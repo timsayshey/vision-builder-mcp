@@ -3,7 +3,7 @@
  * MCP Server for Noleemits Vision Builder
  *
  * IMPORTANT: If you see this message in Claude Desktop logs, the new server is running!
- * Version: 1.7.3
+ * Version: 1.7.5
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -23,7 +23,7 @@ const CONFIG = {
 };
 
 console.error('========================================');
-console.error('NVB MCP Server v1.7.3 Starting...');
+console.error('NVB MCP Server v1.7.5 Starting...');
 console.error(`WordPress URL: ${CONFIG.wordpressUrl}`);
 console.error(`Username: ${CONFIG.username}`);
 console.error('========================================');
@@ -71,7 +71,7 @@ async function wpRequest(endpoint, method = 'GET', body = null) {
 const server = new Server(
     {
         name: "noleemits-vision-builder",
-        version: "1.7.3",
+        version: "1.7.5",
     },
     {
         capabilities: {
@@ -903,6 +903,52 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
     });
 
+    // ============ POST MANAGEMENT ============
+    tools.push({
+        name: 'create_post',
+        description: 'Create a new WordPress post or page. Returns the new post ID, URL, and edit link. Defaults to draft status.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                title: { type: 'string', description: 'Post title (required)' },
+                content: { type: 'string', description: 'Post content (HTML or plain text)' },
+                post_type: { type: 'string', description: 'Post type: post, page, or custom type (default: post)' },
+                status: { type: 'string', enum: ['publish', 'draft', 'private', 'pending'], description: 'Post status (default: draft)' },
+                excerpt: { type: 'string', description: 'Post excerpt/summary' },
+                slug: { type: 'string', description: 'URL slug' },
+                categories: { type: 'array', items: { type: 'string' }, description: 'Category names or IDs (for posts)' },
+                tags: { type: 'array', items: { type: 'string' }, description: 'Tag names (for posts)' },
+            },
+            required: ['title'],
+        },
+    });
+
+    tools.push({
+        name: 'delete_post',
+        description: 'Delete a WordPress post or page. By default moves to trash. Use force=true to permanently delete (irreversible). CAUTION: This action cannot be undone when force=true.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                post_id: { type: 'number', description: 'Post or page ID to delete' },
+                force: { type: 'boolean', description: 'Permanently delete instead of trashing (default: false)' },
+            },
+            required: ['post_id'],
+        },
+    });
+
+    tools.push({
+        name: 'update_post_status',
+        description: 'Change the status of a post or page (e.g. publish a draft, unpublish, move to trash, restore from trash). Shows old and new status.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                post_id: { type: 'number', description: 'Post or page ID' },
+                status: { type: 'string', enum: ['publish', 'draft', 'private', 'pending', 'future', 'trash'], description: 'New status' },
+            },
+            required: ['post_id', 'status'],
+        },
+    });
+
     // ============ RANK MATH SEO ============
     tools.push({
         name: 'get_seo_data',
@@ -1412,6 +1458,41 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 };
             }
 
+            // POST MANAGEMENT
+            case 'create_post': {
+                const body = { title: args.title };
+                if (args.content) body.content = args.content;
+                if (args.post_type) body.post_type = args.post_type;
+                if (args.status) body.status = args.status;
+                if (args.excerpt) body.excerpt = args.excerpt;
+                if (args.slug) body.slug = args.slug;
+                if (args.categories) body.categories = args.categories;
+                if (args.tags) body.tags = args.tags;
+                const result = await wpRequest('/content', 'POST', body);
+                return {
+                    content: [{ type: 'text', text: `${result.message}\nURL: ${result.url}\nEdit: ${result.edit_url || 'N/A'}` }]
+                };
+            }
+
+            case 'delete_post': {
+                const params = new URLSearchParams();
+                if (args.force) params.set('force', 'true');
+                const qs = params.toString();
+                const result = await wpRequest(`/content/${args.post_id}${qs ? '?' + qs : ''}`, 'DELETE');
+                return {
+                    content: [{ type: 'text', text: result.message }]
+                };
+            }
+
+            case 'update_post_status': {
+                const result = await wpRequest(`/content/${args.post_id}/status`, 'POST', {
+                    status: args.status,
+                });
+                return {
+                    content: [{ type: 'text', text: `${result.message}\nURL: ${result.url}` }]
+                };
+            }
+
             // RANK MATH SEO
             case 'get_seo_data': {
                 const result = await wpRequest(`/seo/${args.post_id}`);
@@ -1482,7 +1563,7 @@ async function main() {
 
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error('NVB MCP Server v1.7.3 running');
+    console.error('NVB MCP Server v1.7.5 running');
 }
 
 main().catch(console.error);

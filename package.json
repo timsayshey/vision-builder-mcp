@@ -1,0 +1,49 @@
+{
+  "name": "@noleemits/vision-builder-mcp",
+  "version": "1.7.0",
+  "description": "MCP Server for Noleemits Vision Builder - Connect Claude Desktop to WordPress + Elementor. Manage pages, sections, content, and SEO via AI.",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "nvb-mcp": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "elementor",
+    "wordpress",
+    "claude",
+    "claude-desktop",
+    "ai",
+    "page-builder",
+    "seo",
+    "rank-math",
+    "gutenberg",
+    "noleemits"
+  ],
+  "author": "Noleemits <stevenoleemits@gmail.com>",
+  "license": "GPL-2.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/noleemits/vision-builder-mcp.git"
+  },
+  "homepage": "https://github.com/noleemits/vision-builder-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/noleemits/vision-builder-mcp/issues"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ]
+}

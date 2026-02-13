@@ -3,7 +3,7 @@
  * MCP Server for Noleemits Vision Builder
  *
  * IMPORTANT: If you see this message in Claude Desktop logs, the new server is running!
- * Version: 1.7.0
+ * Version: 1.7.3
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -23,7 +23,7 @@ const CONFIG = {
 };
 
 console.error('========================================');
-console.error('NVB MCP Server v1.7.0 Starting...');
+console.error('NVB MCP Server v1.7.3 Starting...');
 console.error(`WordPress URL: ${CONFIG.wordpressUrl}`);
 console.error(`Username: ${CONFIG.username}`);
 console.error('========================================');
@@ -71,7 +71,7 @@ async function wpRequest(endpoint, method = 'GET', body = null) {
 const server = new Server(
     {
         name: "noleemits-vision-builder",
-        version: "1.7.0",
+        version: "1.7.3",
     },
     {
         capabilities: {
@@ -875,6 +875,34 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
     });
 
+    // ============ POST LISTING & COUNTS ============
+    tools.push({
+        name: 'list_posts',
+        description: 'List WordPress posts/pages with filtering by type, status, and pagination. Use this to browse content, not search_content (which requires a keyword).',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                post_type: { type: 'string', description: 'Post type: post, page, or any custom type (default: post)' },
+                status: { type: 'string', enum: ['any', 'publish', 'draft', 'private', 'pending', 'future'], description: 'Filter by status (default: any)' },
+                per_page: { type: 'number', description: 'Results per page (default: 20, max: 100)' },
+                page: { type: 'number', description: 'Page number for pagination (default: 1)' },
+                orderby: { type: 'string', enum: ['date', 'title', 'modified'], description: 'Sort by field (default: date)' },
+                order: { type: 'string', enum: ['ASC', 'DESC'], description: 'Sort order (default: DESC)' },
+            },
+        },
+    });
+
+    tools.push({
+        name: 'get_post_counts',
+        description: 'Get total count of posts/pages grouped by status (publish, draft, private, pending, future, trash). Use this to quickly see how many posts exist without listing them all.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                post_type: { type: 'string', description: 'Post type to count: post, page, or any custom type (default: post)' },
+            },
+        },
+    });
+
     // ============ RANK MATH SEO ============
     tools.push({
         name: 'get_seo_data',
@@ -1348,6 +1376,42 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 return { content: [{ type: 'text', text: result.message + '\nDetails: ' + result.details.join(', ') }] };
             }
 
+            // POST LISTING & COUNTS
+            case 'list_posts': {
+                const params = new URLSearchParams();
+                if (args.post_type) params.set('post_type', args.post_type);
+                if (args.status) params.set('status', args.status);
+                if (args.per_page) params.set('per_page', args.per_page);
+                if (args.page) params.set('page', args.page);
+                if (args.orderby) params.set('orderby', args.orderby);
+                if (args.order) params.set('order', args.order);
+                const result = await wpRequest(`/content/list?${params.toString()}`);
+                const postList = result.posts.map(p =>
+                    `- [${p.id}] ${p.title} (${p.status}) - ${p.date?.split(' ')[0] || ''} - ${p.word_count} words`
+                ).join('\n');
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `${result.post_type} posts (${result.status_filter}): ${result.count} of ${result.total} total (page ${result.current_page}/${result.pages})\n\n${postList || 'No posts found.'}`
+                    }]
+                };
+            }
+
+            case 'get_post_counts': {
+                const params = new URLSearchParams();
+                if (args.post_type) params.set('post_type', args.post_type);
+                const result = await wpRequest(`/content/counts?${params.toString()}`);
+                const countLines = Object.entries(result.counts).map(([status, count]) =>
+                    `- ${status}: ${count}`
+                ).join('\n');
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Post counts for "${result.post_type}":\n\nTotal (excl. trash): ${result.total}\n\n${countLines}`
+                    }]
+                };
+            }
+
             // RANK MATH SEO
             case 'get_seo_data': {
                 const result = await wpRequest(`/seo/${args.post_id}`);
@@ -1418,7 +1482,7 @@ async function main() {
 
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error('NVB MCP Server v1.7.0 running');
+    console.error('NVB MCP Server v1.7.3 running');
 }
 
 main().catch(console.error);

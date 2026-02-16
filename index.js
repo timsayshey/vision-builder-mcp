@@ -3,7 +3,7 @@
  * MCP Server for Noleemits Vision Builder
  *
  * IMPORTANT: If you see this message in Claude Desktop logs, the new server is running!
- * Version: 1.7.5
+ * Version: 1.7.7
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -23,7 +23,7 @@ const CONFIG = {
 };
 
 console.error('========================================');
-console.error('NVB MCP Server v1.7.5 Starting...');
+console.error('NVB MCP Server v1.7.7 Starting...');
 console.error(`WordPress URL: ${CONFIG.wordpressUrl}`);
 console.error(`Username: ${CONFIG.username}`);
 console.error('========================================');
@@ -71,7 +71,7 @@ async function wpRequest(endpoint, method = 'GET', body = null) {
 const server = new Server(
     {
         name: "noleemits-vision-builder",
-        version: "1.7.5",
+        version: "1.7.7",
     },
     {
         capabilities: {
@@ -1563,7 +1563,7 @@ async function main() {
 
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error('NVB MCP Server v1.7.5 running');
+    console.error('NVB MCP Server v1.7.7 running');
 }
 
 main().catch(console.error);

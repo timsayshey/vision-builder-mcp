@@ -36,7 +36,7 @@
     "url": "https://github.com/noleemits/vision-builder-mcp/issues"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": ">=1.0.0 <1.23.0"
+    "@modelcontextprotocol/sdk": "^1.27.1"
   },
   "engines": {
     "node": ">=18.0.0"
